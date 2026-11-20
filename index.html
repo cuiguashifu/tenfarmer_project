@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>十个勤天助农展示平台</title>
+    <!-- 引入 Bootstrap 和 ECharts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .card-header { border-radius: 15px 15px 0 0 !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h1 class="text-center text-success mb-4">🌾 十个勤天助农成果展示平台</h1>
+    <div class="text-center mb-4">
+    <a href="index.html" class="btn btn-outline-success mx-1">首页</a>
+    <a href="members.html" class="btn btn-outline-success mx-1">成员风采</a>
+    <a href="events.html" class="btn btn-outline-success mx-1">助农事件</a>
+    <a href="album.html" class="btn btn-outline-success mx-1">相册周边</a>
+</div>
+    <hr>
+
+    <div class="row mt-4">
+        <!-- 左侧：图表展示 -->
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header bg-success text-white">帮扶地打卡人气榜 (实时数据)</div>
+                <div class="card-body">
+                    <div id="chart" style="width: 100%; height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：打卡操作区 -->
+        <div class="col-md-5">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">互动区域：为帮扶地打 Call</div>
+                <div class="card-body">
+                    <select id="locSelect" class="form-select mb-3">
+                        <!-- 数据由 JS 动态填入 -->
+                    </select>
+                    <button onclick="doCheckin()" class="btn btn-warning w-100 fw-bold">🚀 立即打卡</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-info text-white">留言墙</div>
+                <div class="card-body">
+                    <input type="text" id="nickname" class="form-control mb-2" placeholder="你的昵称">
+                    <textarea id="content" class="form-control mb-2" rows="3" placeholder="留下对十个勤天的祝福吧..."></textarea>
+                    <button onclick="submitMessage()" class="btn btn-success w-100">提交留言</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 初始化 ECharts 实例
+    var myChart = echarts.init(document.getElementById('chart'));
+    var selectBox = document.getElementById('locSelect');
+
+    // 2. 从后端获取数据 (连接你的 Python 接口)
+    function loadData() {
+        fetch('http://127.0.0.1:5000/api/locations')
+            .then(res => res.json())
+            .then(data => {
+                let xData = data.map(item => item.location_name);
+                let yData = data.map(item => item.checkin_count);
+
+                // 渲染柱状图
+                myChart.setOption({
+                    tooltip: { trigger: 'axis' },
+                    xAxis: { data: xData, axisLabel: { interval: 0, rotate: 15 } },
+                    yAxis: { type: 'value' },
+                    series: [{ 
+                        name: '打卡数', 
+                        type: 'bar', 
+                        data: yData, 
+                        itemStyle: { color: '#28a745', borderRadius: [5, 5, 0, 0] },
+                        barWidth: '40%'
+                    }]
+                });
+
+                // 填充下拉菜单 (注意这里假设后端返回的数据顺序和ID一致)
+                selectBox.innerHTML = '';
+                data.forEach((item, index) => {
+                    let option = document.createElement('option');
+                    option.value = index + 1; 
+                    option.text = item.location_name;
+                    selectBox.appendChild(option);
+                });
+            });
+    }
+
+    // 3. 执行打卡 (调用数据库的存储过程)
+    function doCheckin() {
+        let locId = selectBox.value;
+        fetch('http://127.0.0.1:5000/api/checkin/' + locId, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                alert("打卡成功！");
+                loadData(); // 重新加载数据，让图表动起来
+            });
+    }
+
+    // 4. 提交留言 (触发数据库的触发器)
+    function submitMessage() {
+        let nick = document.getElementById('nickname').value;
+        let cont = document.getElementById('content').value;
+        if(!nick || !cont) { alert('昵称和内容不能为空哦！'); return; }
+
+        fetch('http://127.0.0.1:5000/api/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname: nick, content: cont })
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert("留言成功！快看左边柱状图，因为触发了触发器，打卡数增加了！");
+            document.getElementById('content').value = '';
+            loadData(); // 刷新图表
+        });
+    }
+
+    // 页面加载时执行
+    loadData();
+</script>
+</body>
+</html>
