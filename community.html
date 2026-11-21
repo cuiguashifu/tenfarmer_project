@@ -81,7 +81,8 @@
                                             <small class="text-muted">${timeStr}</small>
                                         </div>
                                     </div>
-                                    <p class="mb-0" style="font-size: 15px; line-height: 1.6;">${post.content}</p>
+                                    <p class="mb-0" id="content-${post.message_id}" style="font-size: 15px; line-height: 1.6;">${post.content}</p>
+${post.nickname === currentUser ? `<button class="btn btn-sm btn-outline-secondary mt-2" onclick="editPost(${post.message_id})">修改内容</button>` : ''}
                                 </div>
                             `;
                         });
@@ -148,6 +149,28 @@
                 alert("网络错误，请检查后端是否运行");
             });
         }
+        function editPost(id) {
+        let pElement = document.getElementById('content-' + id);
+        let oldContent = pElement.innerText;
+        let newContent = prompt("请修改你的记录内容：", oldContent);
+    
+        if (newContent !== null && newContent.trim() !== "" && newContent !== oldContent) {
+            fetch('http://127.0.0.1:5000/api/update_post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: id, content: newContent, username: currentUser })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.code === 200) {
+                    alert("修改成功！");
+                    loadPosts(); // 刷新列表
+                } else {
+                    alert("修改失败！");
+                }
+            });
+        }
+    }
     </script>
     <script>
         if(currentUser) {

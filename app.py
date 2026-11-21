@@ -305,5 +305,27 @@ def delete_activity():
         print("数据库报错:", e)
         return jsonify({"code": 500, "msg": str(e)})
 
+# 15. 修改留言接口
+@app.route('/api/update_post', methods=['POST'])
+def update_post():
+    data = request.json
+    message_id = data.get('message_id')
+    content = data.get('content')
+    username = data.get('username')
+    
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        # 只能修改自己的留言
+        cursor.execute("UPDATE tb_message SET content = %s WHERE message_id = %s AND nickname = %s", 
+                       (content, message_id, username))
+        db.commit()
+        return jsonify({"code": 200, "msg": "修改成功！"})
+    except Exception as e:
+        db.rollback()
+        return jsonify({"code": 500, "msg": "修改失败", "error": str(e)})
+    finally:
+        db.close()
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
