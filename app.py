@@ -231,7 +231,7 @@ def get_photos_from_db():
     db.close()
     return jsonify(res)
 
-# 1. 获取所有活动接口
+# 15. 获取所有活动接口
 @app.route('/api/get_activities', methods=['GET'])
 def get_activities():
     db = get_db()
@@ -249,7 +249,7 @@ def get_activities():
         
     return jsonify(result)
 
-# 2. 发布新活动接口
+# 16. 发布新活动接口
 @app.route('/api/add_activity', methods=['POST'])
 def add_activity():
     data = request.get_json()
@@ -276,7 +276,7 @@ def add_activity():
         print("数据库报错:", e)
         return jsonify({"code": 500, "msg": str(e)})
 
-# 3. 删除活动接口
+# 17. 删除活动接口
 @app.route('/api/delete_activity', methods=['POST'])
 def delete_activity():
     data = request.get_json()
@@ -305,7 +305,7 @@ def delete_activity():
         print("数据库报错:", e)
         return jsonify({"code": 500, "msg": str(e)})
 
-# 15. 修改留言接口
+# 18. 修改留言接口
 @app.route('/api/update_post', methods=['POST'])
 def update_post():
     data = request.json
