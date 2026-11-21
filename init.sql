@@ -64,6 +64,25 @@ CREATE TABLE tb_merchandise (
     official_link VARCHAR(255) COMMENT '官方渠道链接'
 ) COMMENT='公益周边信息表';
 
+-- 8. 用户表
+CREATE TABLE tb_user (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL
+);
+
+-- 9. 活动日历表
+CREATE TABLE tb_activity (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    content TEXT,
+    color VARCHAR(20),
+    username VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ================= 插入测试数据 =================
 INSERT INTO tb_member (name, role, intro) VALUES ('蒋敦豪', '董事长', '十个勤天主理人');
 INSERT INTO tb_member (name, role, intro) VALUES ('鹭卓', '种植组', '玫瑰王子');
