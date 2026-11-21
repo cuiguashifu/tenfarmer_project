@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>活动日历 - 十个勤天</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <style>
+        .fc-daygrid-day { cursor: pointer; transition: background 0.2s; }
+        .fc-daygrid-day:hover { background: #f4efe6; }
+        .fc-event { cursor: pointer; } 
+    </style>
+</head>
+<body>
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom">成员</a>
+            <a href="activities.html" class="nav-link-custom active">活动</a>
+            <a href="events.html" class="nav-link-custom">助农</a>
+            <a href="checkin.html" class="nav-link-custom">签到</a>
+            <a href="community.html" class="nav-link-custom">社区</a>
+            <a href="gallery.html" class="nav-link-custom">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
+    </div>
+
+    <div class="container mt-4">
+        <!-- 顶部工具栏 -->
+        <div class="custom-card p-3 mb-4 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <label class="fw-bold text-nowrap mb-0" style="color: #2b4235;">选择月份：</label>
+                <input type="month" class="form-control" id="monthPicker" min="2023-01" max="2026-12">
+            </div>
+            <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#activityModal" onclick="openModal()">
+                ＋添加活动
+            </button>
+        </div>
+        
+        <div class="custom-card p-4 bg-white">
+            <div id='calendar'></div>
+        </div>
+    </div>
+
+    <!-- 1. 添加活动的弹窗 -->
+    <div class="modal fade" id="activityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 16px;">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" style="color: #2b4235;">记录活动</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">活动名称 (必填)</label>
+                        <input type="text" id="actTitle" class="form-control" placeholder="比如：后陡门龙舟比赛">
+                    </div>
+                    <div class="mb-3 row">
+                        <div class="col-6">
+                            <label class="form-label">开始日期</label>
+                            <input type="date" id="actStartDate" class="form-control">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">结束日期 (选填)</label>
+                            <input type="date" id="actEndDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">活动详情 (选填)</label>
+                        <textarea id="actContent" class="form-control" rows="2" placeholder="内容详情"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">标签颜色</label>
+                        <select id="actColor" class="form-select">
+                            <option value="#2d4a3e">深绿色 (录制/日常)</option>
+                            <option value="#c59b5f">卡其色 (巡演/大型活动)</option>
+                            <option value="#8fb996">浅绿色 (生日会/品牌)</option>
+                            <option value="#d9534f">红色 (重要事件)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-custom" onclick="submitActivity()">发布活动</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 新增：查看详情/删除的弹窗 -->
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 16px;">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" style="color: #2b4235;" id="detailTitle">活动详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>时间：</strong> <span id="detailTime"></span></p>
+                    <p><strong>发起人：</strong> <span id="detailUser"></span></p>
+                    <p><strong>内容：</strong></p>
+                    <div class="p-3 bg-light rounded" style="min-height: 80px;" id="detailContent"></div>
+                    <!-- 隐藏域，用来存当前活动的 ID -->
+                    <input type="hidden" id="deleteId">
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-danger" id="deleteBtn" onclick="deleteActivity()">删除此活动</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let currentUser = localStorage.getItem('loginUser') || '游客';
+        let statusBtn = document.getElementById('userStatus');
+        if (currentUser !== '游客' && statusBtn) {
+            statusBtn.innerText = currentUser;
+        }
+
+        let calendar;
+        let detailModalObj; // 全局弹窗实例
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
+            var monthPicker = document.getElementById('monthPicker');
+            let today = new Date();
+            
+            // 初始化详情弹窗
+            detailModalObj = new bootstrap.Modal(document.getElementById('detailModal'));
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                initialDate: today,
+                headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+                
+                events: function(info, successCallback, failureCallback) {
+                    fetch('http://127.0.0.1:5000/api/get_activities')
+                        .then(res => res.json())
+                        .then(data => {
+                            let events = data.map(item => ({
+                                id: item.id,
+                                title: item.title,
+                                start: item.start_date,
+                                end: item.end_date,
+                                color: item.color,
+                                extendedProps: {
+                                    content: item.content,
+                                    username: item.username
+                                }
+                            }));
+                            successCallback(events);
+                        })
+                        .catch(err => failureCallback(err));
+                },
+
+                dateClick: function(info) {
+                    openModal(info.dateStr);
+                },
+
+                eventClick: function(info) {
+                    let props = info.event.extendedProps;
+                    document.getElementById('deleteId').value = info.event.id; 
+                    document.getElementById('detailTitle').innerText = info.event.title;
+                    
+                    let timeStr = info.event.startStr;
+                    if (info.event.endStr) timeStr += " 至 " + info.event.endStr;
+                    document.getElementById('detailTime').innerText = timeStr;
+                    
+                    document.getElementById('detailUser').innerText = props.username || '未知';
+                    document.getElementById('detailContent').innerText = props.content || '无详细描述';
+                    
+                    if (props.username === currentUser) {
+                        // 如果是自己发的，显示删除按钮
+                        document.getElementById('deleteBtn').style.display = 'block';
+                    } else {
+                        // 如果不是自己发的，隐藏删除按钮
+                        document.getElementById('deleteBtn').style.display = 'none';
+                    }
+                    
+                    detailModalObj.show();
+                },
+
+                datesSet: function(info) {
+                    let currentDate = info.view.currentStart;
+                    let year = currentDate.getFullYear();
+                    let month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                    monthPicker.value = `${year}-${month}`;
+                }
+            });
+            calendar.render();
+
+            monthPicker.addEventListener('change', function() {
+                if (this.value) calendar.gotoDate(this.value + '-01');
+            });
+        });
+
+        function openModal(dateStr = "") {
+            document.getElementById('actTitle').value = '';
+            document.getElementById('actContent').value = '';
+            document.getElementById('actEndDate').value = '';
+            if (dateStr === "") dateStr = new Date().toISOString().split('T')[0];
+            document.getElementById('actStartDate').value = dateStr;
+        }
+
+        function submitActivity() {
+            if (currentUser === '游客') { alert("请先登录！"); return; }
+            let title = document.getElementById('actTitle').value;
+            let startDate = document.getElementById('actStartDate').value;
+            let endDate = document.getElementById('actEndDate').value || null;
+            let content = document.getElementById('actContent').value;
+            let color = document.getElementById('actColor').value;
+
+            if (!title || !startDate) { alert("名称和日期必填！"); return; }
+
+            let data = { title, start_date: startDate, end_date: endDate, content, color, username: currentUser };
+
+            fetch('http://127.0.0.1:5000/api/add_activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.code === 200) {
+                    bootstrap.Modal.getInstance(document.getElementById('activityModal')).hide();
+                    calendar.refetchEvents();
+                } else { alert("发布失败：" + resData.msg); }
+            });
+        }
+
+        // 执行删除的函数
+        function deleteActivity() {
+            let id = document.getElementById('deleteId').value;
+            if (!id) return;
+
+            if (!confirm("确定要删除这个活动吗？")) {
+                return;
+            }
+
+            fetch('http://127.0.0.1:5000/api/delete_activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.code === 200) {
+                    alert("删除成功！");
+                    detailModalObj.hide(); // 关闭弹窗
+                    calendar.refetchEvents(); // 刷新日历，色块会消失
+                } else {
+                    alert("删除失败：" + resData.msg);
+                }
+            })
+            .catch(err => alert("网络错误！"));
+        }
+    </script>
+</body>
+</html>

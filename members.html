@@ -2,37 +2,62 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>成员风采</title>
+    <title>成员风采 - 十个勤天</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h2 class="text-center text-success">👨‍🌾 成员风采</h2>
-    <div class="text-center mb-4">
-        <a href="index.html" class="btn btn-outline-success mx-1">首页</a>
-        <a href="members.html" class="btn btn-success mx-1">成员风采</a>
-        <a href="events.html" class="btn btn-outline-success mx-1">助农事件</a>
-        <a href="album.html" class="btn btn-outline-success mx-1">相册周边</a>
+<body>
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom active">成员</a>
+            <a href="activities.html" class="nav-link-custom">活动</a>
+            <a href="events.html" class="nav-link-custom">助农</a>
+            <a href="checkin.html" class="nav-link-custom">签到</a>
+            <a href="community.html" class="nav-link-custom">社区</a>
+            <a href="gallery.html" class="nav-link-custom">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
     </div>
-    <div class="row" id="memberList"></div>
-</div>
-<script>
-    fetch('http://127.0.0.1:5000/api/members').then(res=>res.json()).then(data=>{
-        let html = '';
-        data.forEach(m => {
-            html += `<div class="col-md-3 mb-4">
-                <div class="card shadow h-100">
-                    <img src="https://picsum.photos/300/300?random=${m.member_id}" class="card-img-top" alt="avatar">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">${m.name}</h5>
-                        <p class="badge bg-success">${m.role}</p>
-                        <p class="card-text text-muted">${m.intro}</p>
-                    </div>
-                </div>
-            </div>`;
-        });
-        document.getElementById('memberList').innerHTML = html;
-    });
-</script>
+
+    <div class="container mt-5">
+        <h2 class="mb-4" style="font-family: serif;">田野里的少年们</h2>
+        <div class="row" id="memberList">
+        </div>
+    </div>
+
+            <script>
+        fetch('http://127.0.0.1:5000/api/members')
+            .then(res => res.json())
+            .then(data => {
+                let html = '';
+                data.forEach((m, index) => {
+                    html += `<div class="col-md-3 mb-4" onclick="window.location.href='member_detail.html?id=${m.member_id}'" style="cursor: pointer;">
+                        <div class="custom-card p-3 text-center">
+                            <img src="images/${index + 11}.jpg" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #e5e9e5;" onerror="this.src='https://picsum.photos/200/200?random=${m.member_id}'">
+                            <h4 class="fw-bold" style="font-family: 'Noto Serif SC', serif;">${m.name}</h4>
+                            <span class="badge mb-2" style="background-color: #2b4235;">${m.role}</span>
+                            <p class="text-muted small">${m.intro}</p>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('memberList').innerHTML = html;
+            });
+    </script>
+
+    <script>
+    // 检查本地是否存了登录信息
+    let currentUser = localStorage.getItem('loginUser');
+    if(currentUser) {
+        let statusBtn = document.getElementById('userStatus');
+        if(statusBtn) {
+            statusBtn.innerText = currentUser;
+            statusBtn.href = "login.html"; 
+            statusBtn.onclick = function() { localStorage.removeItem('loginUser'); location.reload(); }
+        }
+    }
+    </script>
 </body>
 </html>

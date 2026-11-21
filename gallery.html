@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>名场面 - 十个勤天</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .gallery-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            background: #fff;
+            margin-bottom: 24px;
+            height: 100%;
+        }
+        .gallery-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(43, 66, 53, 0.15);
+        }
+        .gallery-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+        .gallery-card:hover .gallery-img {
+            transform: scale(1.05);
+        }
+        /* 虚线边框的上传按钮 */
+        .add-photo-card {
+            border: 2px dashed #a3b19b;
+            border-radius: 12px;
+            background: #f4efe6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 320px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .add-photo-card:hover { background: #e5e9e5; }
+    </style>
+</head>
+<body>
+
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom">成员</a>
+            <a href="activities.html" class="nav-link-custom">活动</a>
+            <a href="events.html" class="nav-link-custom">助农</a>
+            <a href="checkin.html" class="nav-link-custom">签到</a>
+            <a href="community.html" class="nav-link-custom">社区</a>
+            <a href="gallery.html" class="nav-link-custom active">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
+    </div>
+
+    <div class="container mt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <h2 style="font-family: 'Noto Serif SC', serif; color: #2b4235; margin: 0;">回忆记录</h2>
+            <span class="text-muted">用眼睛去感受世界。</span>
+        </div>
+        
+        <div class="row" id="galleryContainer">
+            <!-- 照片由 JS 动态渲染 -->
+        </div>
+    </div>
+
+    <!-- 上传照片的弹窗  -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius: 16px;">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" style="color: #2b4235;">上传新照片</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">照片名称</label>
+                        <input type="text" id="photoTitle" class="form-control" placeholder="比如：后陡门的晚霞">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择本地图片</label>
+                        <input type="file" id="photoFile" class="form-control" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary-custom" onclick="submitPhoto()">确认上传</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 Bootstrap JS  -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let currentUser = localStorage.getItem('loginUser');
+        let statusBtn = document.getElementById('userStatus');
+        if (currentUser && statusBtn) {
+            statusBtn.innerText = currentUser;
+        }
+
+        // ================= 1. 渲染照片 =================
+        function loadPhotos() {
+            fetch('http://127.0.0.1:5000/api/get_photos')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+
+                    // 渲染7张本地照片
+                    for(let i=21; i<=27; i++) {
+                        html += buildCard(`默认名场面 ${i-20}`, `images/${i}.jpg`);
+                    }
+
+                    // 2. 再把后端数据库里的图片追加在后面
+                    if (data.length > 0) {
+                        data.forEach(p => {
+                            // 如果 image_path 是 /static 开头，加上 IP 端口
+                            let imgUrl = p.image_path.startsWith('/static') ? 'http://127.0.0.1:5000' + p.image_path : p.image_path;
+                            html += buildCard(p.title, imgUrl, p.category);
+                        });
+                    }
+
+                    // 最后加一个“添加照片”的卡片
+                    html += `
+                        <div class="col-md-4">
+                            <div class="add-photo-card" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                                <h1 style="color: #2b4235; font-size: 50px; margin-bottom: 10px;">+</h1>
+                                <h5 style="color: #2b4235; font-weight: bold;">添加照片</h5>
+                                <span class="text-muted small">上传你拍到的田野</span>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('galleryContainer').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('galleryContainer').innerHTML = '<p class="text-danger text-center">加载失败，请检查后端。</p>';
+                });
+        }
+
+        // 构建单张卡片的 HTML
+        function buildCard(title, imgSrc, tag = "") {
+            return `
+                <div class="col-md-4">
+                    <div class="gallery-card">
+                        <img src="${imgSrc}" class="gallery-img" alt="${title}" onerror="this.src='https://picsum.photos/400/300?random=1'">
+                        <div class="p-3">
+                            <h6 class="mb-1 fw-bold" style="color: #333;">${title}</h6>
+                            ${tag ? `<span class="badge bg-secondary" style="font-size: 11px;">${tag}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 初始化加载
+        loadPhotos();
+
+        // ================= 2. 上传逻辑 =================
+        function submitPhoto() {
+            if (!currentUser) {
+                alert("请先登录才能上传照片哦！");
+                return;
+            }
+
+            let title = document.getElementById('photoTitle').value;
+            let file = document.getElementById('photoFile').files[0];
+
+            if (!title || !file) {
+                alert("请填写照片名称并选择图片！");
+                return;
+            }
+
+            // 用 FormData 包装文件和文字
+            let formData = new FormData();
+            formData.append('title', title);
+            formData.append('photo', file);
+            formData.append('uploader', currentUser);
+
+            // 发送 POST 请求
+            fetch('http://127.0.0.1:5000/api/upload_photo', {
+                method: 'POST',
+                body: formData // 注意：FormData 不需要设置 Content-Type，浏览器会自动处理
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    alert("上传成功！");
+                    // 关闭弹窗
+                    let modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
+                    modal.hide();
+                    
+                    // 清空表单
+                    document.getElementById('photoTitle').value = '';
+                    document.getElementById('photoFile').value = '';
+                    
+                    // 重新加载相册
+                    loadPhotos();
+                } else {
+                    alert("上传失败：" + data.msg);
+                }
+            })
+            .catch(err => {
+                alert("网络错误，请检查后端是否运行。");
+            });
+        }
+    </script>
+</body>
+</html>

@@ -2,43 +2,273 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>助农事件</title>
+    <title>助农行动时间线 - 十个勤天</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #f4efe6; }
+        
+        /* 顶部 Banner */
+        .hero-banner {
+            background-image: linear-gradient(rgba(244, 239, 230, 0.7), rgba(244, 239, 230, 0.9)), url('https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            padding: 60px 10% 40px;
+            border-bottom: 2px solid #e0dcd3;
+        }
+        .hero-banner h1 { font-family: 'Noto Serif SC', serif; font-size: 50px; font-weight: bold; color: #2b4235; letter-spacing: 5px; }
+        
+        /* 筛选栏 */
+        .filter-section { background: #f4efe6; padding: 15px 10%; border-bottom: 1px solid #e0dcd3; font-size: 14px;}
+        .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .filter-row:last-child { margin-bottom: 0; }
+        .filter-label { font-weight: bold; color: #333; width: 40px; }
+        .filter-btn { border: 1px solid #ccc; padding: 4px 12px; border-radius: 4px; color: #666; background: transparent; cursor: pointer; transition: 0.2s;}
+        .filter-btn:hover { background: #e5e9e5; }
+        .filter-btn.active { background: #2b4235; color: #fff; border-color: #2b4235;}
+
+        /* 垂直时间轴容器 */
+        .timeline-container { padding: 40px 15%; max-width: 1200px; margin: 0 auto; min-height: 400px; }
+        
+        /* 每一行时间轴 */
+        .timeline-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .timeline-row:hover .content-box {
+            transform: translateX(10px);
+            box-shadow: 0 10px 25px rgba(43, 66, 53, 0.15);
+        }
+
+        /* 左侧日期 */
+        .date-box {
+            width: 120px;
+            font-weight: bold;
+            color: #2b4235;
+            font-size: 16px;
+            padding-top: 18px;
+            text-align: right;
+            padding-right: 20px;
+            flex-shrink: 0;
+        }
+
+        /* 中间的线和圆点 */
+        .line-box {
+            position: relative;
+            width: 2px;
+            background-color: #d0d7cc;
+            margin: 0 20px;
+            align-self: stretch;
+        }
+        .line-box::before {
+            content: '';
+            position: absolute;
+            top: 22px;
+            left: -7px;
+            width: 16px;
+            height: 16px;
+            background-color: #fff;
+            border: 4px solid #8fb996;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .timeline-row:hover .line-box::before {
+            background-color: #2b4235;
+            border-color: #2b4235;
+            transform: scale(1.2);
+        }
+
+        /* 右侧内容卡片 */
+        .content-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            flex-grow: 1;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .timeline-row:hover .content-box { border-left-color: #8fb996; }
+
+        .event-title { font-family: 'Noto Serif SC', serif; font-weight: bold; font-size: 20px; color: #333; margin-bottom: 10px; }
+        .event-desc { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+        .event-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #999; }
+        
+        .jump-icon { color: #2b4235; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity 0.3s; }
+        .timeline-row:hover .jump-icon { opacity: 1; }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h2 class="text-center text-success">📅 助农事件时间轴</h2>
-    <div class="text-center mb-4">
-        <a href="index.html" class="btn btn-outline-success mx-1">首页</a>
-        <a href="members.html" class="btn btn-outline-success mx-1">成员风采</a>
-        <a href="events.html" class="btn btn-success mx-1">助农事件</a>
-        <a href="album.html" class="btn btn-outline-success mx-1">相册周边</a>
+<body>
+
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom">成员</a>
+            <a href="activities.html" class="nav-link-custom">活动</a>
+            <a href="events.html" class="nav-link-custom active">助农</a>
+            <a href="checkin.html" class="nav-link-custom">签到</a>
+            <a href="community.html" class="nav-link-custom">社区</a>
+            <a href="gallery.html" class="nav-link-custom">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
     </div>
-    <table class="table table-hover shadow bg-white">
-        <thead class="table-success">
-            <tr>
-                <th>事件标题</th>
-                <th>发生日期</th>
-                <th>帮扶地</th>
-                <th>详情</th>
-            </tr>
-        </thead>
-        <tbody id="eventList"></tbody>
-    </table>
-</div>
-<script>
-    fetch('http://127.0.0.1:5000/api/events').then(res=>res.json()).then(data=>{
-        let html = '';
-        data.forEach(e => {
-            html += `<tr>
-                <td>${e.event_title}</td>
-                <td>${e.event_date.split('T')[0]}</td>
-                <td><span class="badge bg-info text-dark">${e.location_name}</span></td>
-                <td>${e.content}</td>
-            </tr>`;
-        });
-        document.getElementById('eventList').innerHTML = html;
-    });
-</script>
+
+    <!-- 顶部 Banner -->
+    <div class="hero-banner">
+        <p class="text-muted mb-2 tracking-widest" style="letter-spacing: 3px;">FIELD AID TIMELINE / 2023 - 2026</p>
+        <h1>助农行动时间线</h1>
+        <p class="text-muted mt-3" style="max-width: 600px;">农民富裕、农业繁荣、农村和谐。</p>
+    </div>
+
+    <!-- 筛选栏 (双维筛选) -->
+    <div class="filter-section">
+        <!-- 年份 -->
+        <div class="filter-row">
+            <span class="filter-label">年份</span>
+            <button class="filter-btn active" onclick="changeFilter('year', 'all', this)">全部</button>
+            <button class="filter-btn" onclick="changeFilter('year', '2023', this)">2023</button>
+            <button class="filter-btn" onclick="changeFilter('year', '2024', this)">2024</button>
+            <button class="filter-btn" onclick="changeFilter('year', '2025', this)">2025</button>
+            <button class="filter-btn" onclick="changeFilter('year', '2026', this)">2026</button>
+        </div>
+        <!-- 类型 -->
+        <div class="filter-row">
+            <span class="filter-label">类型</span>
+            <button class="filter-btn active" onclick="changeFilter('type', 'all', this)">全部</button>
+            <button class="filter-btn" onclick="changeFilter('type', '产业起点', this)">产业起点</button>
+            <button class="filter-btn" onclick="changeFilter('type', '直播助农', this)">直播助农</button>
+            <button class="filter-btn" onclick="changeFilter('type', '公益捐赠', this)">公益捐赠</button>
+            <button class="filter-btn" onclick="changeFilter('type', '生态公益', this)">生态公益</button>
+            <button class="filter-btn" onclick="changeFilter('type', '产业帮扶', this)">产业帮扶</button>
+            <button class="filter-btn" onclick="changeFilter('type', '地方推广', this)">地方推广</button>
+            <button class="filter-btn" onclick="changeFilter('type', '个人公益', this)">个人公益</button>
+            <button class="filter-btn" onclick="changeFilter('type', '重点成果', this)">重点成果</button>
+        </div>
+    </div>
+
+    <!-- 垂直时间轴区域 -->
+    <div class="timeline-container" id="timelineContainer">
+        <!-- JS 动态渲染 -->
+    </div>
+
+    <script>
+        let allEvents = [];      
+        let currentYear = 'all'; 
+        let currentType = 'all'; 
+
+        // 1. 拉取数据
+        fetch('http://127.0.0.1:5000/api/events')
+            .then(res => res.json())
+            .then(data => {
+                allEvents = data;
+                renderTimeline(allEvents);
+            })
+            .catch(err => {
+                document.getElementById('timelineContainer').innerHTML = '<p class="text-danger text-center">后端数据加载失败，请检查 app.py。</p>';
+            });
+
+        // 2. 筛选触发函数 
+        function changeFilter(category, value, btn) {
+            let parent = btn.parentElement;
+            parent.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if(category === 'year') currentYear = value;
+            if(category === 'type') currentType = value;
+
+            let filteredData = allEvents.filter(e => {
+                let eDate = String(e.event_date || "");
+                let eType = String(e.event_type || "").trim();
+
+                // 精确匹配
+                let matchYear = (currentYear === 'all') || eDate.includes(currentYear);
+                let matchType = (currentType === 'all') || (eType === currentType);
+
+                return matchYear && matchType;
+            });
+
+            renderTimeline(filteredData);
+        }
+
+        // 3. 渲染时间轴
+        function renderTimeline(data) {
+            if (data.length === 0) {
+                document.getElementById('timelineContainer').innerHTML = '<p class="text-center text-muted mt-5">该条件下暂无助农记录。</p>';
+                return;
+            }
+
+            // 降序排列
+            let sortedData = [...data].sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+
+            let html = '';
+            sortedData.forEach((e) => {
+                // 处理日期
+                let rawDate = String(e.event_date || "");
+                let d = new Date(rawDate);
+                let cleanDate = "";
+                
+                if (!isNaN(d.getTime())) {
+                    // 如果能正常解析时间，提取年月日并补0
+                    let year = d.getFullYear();
+                    let month = String(d.getMonth() + 1).padStart(2, '0');
+                    let day = String(d.getDate()).padStart(2, '0');
+                    cleanDate = `${year}.${month}.${day}`;
+                } else {
+                    // 如果格式极其特殊解析不了，作为兜底：只截取前10位
+                    cleanDate = rawDate.substring(0, 10).replace(/-/g, '.');
+                }
+                
+                // 处理跳转链接
+                let targetUrl = e.source_url || `https://www.baidu.com/s?wd=${e.event_title}`;
+
+                // 动态标签颜色
+                let tagColor = '#8fb996'; // 默认绿
+                if(e.event_type === '直播助农') tagColor = '#e6a23c';
+                if(e.event_type === '重点成果') tagColor = '#f56c6c';
+                if(e.event_type === '产业起点') tagColor = '#2b4235';
+                if(e.event_type === '个人公益') tagColor = '#8e44ad';
+                if(e.event_type === '生态公益') tagColor = '#27ae60';
+                if(e.event_type === '公益捐赠') tagColor = '#c0392b';
+
+                html += `
+                    <div class="timeline-row" onclick="window.open('${targetUrl}', '_blank')">
+                        <div class="date-box">${cleanDate}</div>
+                        <div class="line-box"></div>
+                        <div class="content-box">
+                            <div class="event-title">${e.event_title}</div>
+                            <div class="event-desc">${e.content}</div>
+                            
+                            <div class="event-meta">
+                                <span>
+                                    ${e.location_name || '助农行动'} 
+                                    · <span class="badge" style="background-color: ${tagColor};">${e.event_type || '其他'}</span>
+                                </span>
+                                <span class="jump-icon">查看互联网记录 ↗</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('timelineContainer').innerHTML = html;
+        }
+    </script>
+        <script>
+        // 检查本地是否存了登录信息
+        let navUser = localStorage.getItem('loginUser');
+        if(navUser) {
+            let statusBtn = document.getElementById('userStatus');
+            if(statusBtn) {
+                statusBtn.innerText = navUser;
+                statusBtn.href = "login.html"; 
+            }
+        }
+    </script>
 </body>
 </html>

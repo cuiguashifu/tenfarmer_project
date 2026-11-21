@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>每日签到 - 十个勤天</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 日历网格基础 */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+        
+        /* 各种状态的格子 */
+        .day-box { 
+            height: 60px; border-radius: 8px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-weight: bold; 
+            font-size: 16px; transition: all 0.3s ease;
+        }
+        
+        /* 1. 过去的日期 */
+        .day-box.past-day { background: #f0f0f0; color: #aaa; border: 1px solid #e0e0e0; }
+
+        /* 2. 已经签到的日期*/
+        .day-box.signed-day { background: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .day-box.signed-day::after { content: '✓'; font-size: 12px; margin-top: 2px; }
+
+        /* 3. 今天 */
+        .day-box.today-unsigned { background: #fff3cd; color: #856404; border: 2px solid #ffe69c; }
+
+        /* 4. 今天 */
+        .day-box.today-signed { background: #198754; color: #fff; border: 1px solid #198754; box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3); }
+        .day-box.today-signed::after { content: '今天已签'; font-size: 11px; margin-top: 2px; }
+
+        /* 5. 未来日期 */
+        .day-box.future-day { background: #fff; color: #ccc; border: 1px solid #eee; }
+
+        /* 空白占位格 */
+        .day-box.empty { background: transparent; border: none; }
+    </style>
+</head>
+<body>
+
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom">成员</a>
+            <a href="activities.html" class="nav-link-custom">活动</a>
+            <a href="events.html" class="nav-link-custom">助农</a>
+            <a href="checkin.html" class="nav-link-custom active">签到</a>
+            <a href="community.html" class="nav-link-custom">社区</a>
+            <a href="gallery.html" class="nav-link-custom">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row">
+            <!-- 左侧：签到操作区 -->
+            <div class="col-md-5">
+                <div class="custom-card p-4">
+                    <h2 class="mb-4" style="font-family: 'Noto Serif SC', serif; color: var(--primary-color);">慢慢生长，也会长出答案</h2>
+                    <p class="text-muted mb-4">土地是不会骗人的，庄稼在生长，你也在生长。。</p>
+                    
+                    <div class="d-flex justify-content-between text-center my-4 bg-light p-3 rounded">
+                        <div><h3 class="fw-bold mb-0" id="continuousDays">0</h3><small>连续天数</small></div>
+                        <div><h3 class="fw-bold mb-0" id="totalDays">0</h3><small>累计天数</small></div>
+                        <div><h3 class="fw-bold mb-0" style="color: #c59b5f;" id="wheatValue">0</h3><small>麦粒值</small></div>
+                    </div>
+                    
+                    <button onclick="doCheckin()" id="checkinBtn" class="btn btn-primary-custom w-100 py-3 mb-4" style="font-size: 1.1rem;">📌 盖下今日印章</button>
+                    
+                    <h5 class="mt-4 mb-3">麦粒值明细</h5>
+                    <div class="d-flex justify-content-between border-bottom py-2"><span class="text-muted">每日签到</span><span id="dailyEarn">+0</span></div>
+                    <div class="d-flex justify-content-between py-2"><span class="text-muted">发布成长记录</span><span id="postEarn">+0</span></div>
+                </div>
+            </div>
+
+            <!-- 右侧：真实的动态日历区 -->
+            <div class="col-md-7">
+                <div class="custom-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="mb-0" id="calendarTitle">本月签到日历</h4>
+                        <span class="badge bg-secondary" id="userGreeting">未登录</span>
+                    </div>
+                    <!-- 星期表头 -->
+                    <div class="calendar-grid mb-2 text-center text-muted" style="font-size: 14px;">
+                        <div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div>
+                    </div>
+                    <!-- 日期格子 -->
+                    <div class="calendar-grid" id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === 配置与状态 ===
+        let currentUser = localStorage.getItem('loginUser') || 'guest'; // 获取当前登录用户，未登录则为guest
+        let checkinKey = 'checkin_data_' + currentUser; // 按用户隔离的存储键名
+        
+        // 获取今天的真实日期
+        let today = new Date();
+        let todayStr = formatDateStr(today); 
+
+        // === 初始化页面 ===
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('userGreeting').innerText = currentUser === 'guest' ? '未登录' : currentUser + ' 的日历';
+            document.getElementById('calendarTitle').innerText = `${today.getFullYear()}年${today.getMonth() + 1}月 签到日历`;
+            
+            generateCalendar();
+            updateStatsAndUI();
+        });
+
+        // === 核心逻辑 1：生成真实日历 ===
+        function generateCalendar() {
+            let year = today.getFullYear();
+            let month = today.getMonth(); // 0-11
+            
+            // 获取本月第一天是星期几
+            let firstDay = new Date(year, month, 1).getDay();
+            // 把周一作为一周的开始，计算前置空白天数
+            let emptyDays = firstDay === 0 ? 6 : firstDay - 1;
+
+            // 获取本月总天数
+            let daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let html = '';
+
+            // 1. 生成前置空白格
+            for(let i=0; i<emptyDays; i++) {
+                html += `<div class="day-box empty"></div>`;
+            }
+
+            // 2. 获取用户已有的签到记录
+            let records = JSON.parse(localStorage.getItem(checkinKey) || '[]');
+
+            // 3. 生成每天的格子
+            for(let i=1; i<=daysInMonth; i++) {
+                // 补零，凑成 YYYY-MM-DD 格式用于比对
+                let dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                
+                let cssClass = '';
+                
+                if(records.includes(dateStr)) {
+                    // 如果记录里包含这一天，说明签到了
+                    cssClass = dateStr === todayStr ? 'today-signed' : 'signed-day';
+                } else {
+                    // 没签到
+                    if(i < today.getDate()) {
+                        cssClass = 'past-day'; 
+                    } else if (i === today.getDate()) {
+                        cssClass = 'today-unsigned'; 
+                    } else {
+                        cssClass = 'future-day'; 
+                    }
+                }
+
+                html += `<div class="day-box ${cssClass}">${i}</div>`;
+            }
+
+            document.getElementById('calendar').innerHTML = html;
+        }
+
+        // === 核心逻辑 2：更新数字面板 ===
+        function updateStatsAndUI() {
+            let records = JSON.parse(localStorage.getItem(checkinKey) || '[]');
+            
+            // 修改：直接读取用户总共通过发帖赚到的分数（不再用次数计算）
+            let wheatFromPost = parseInt(localStorage.getItem('post_score_' + currentUser) || '0');
+            let postCount = parseInt(localStorage.getItem('post_count_' + currentUser) || '0');
+
+            let totalCheckins = records.length;
+            let wheatFromCheckin = totalCheckins * 5;
+            let totalWheat = wheatFromCheckin + wheatFromPost;
+            
+            // 计算连续天数
+            let continuous = 0;
+            if(totalCheckins > 0) {
+                let checkDate = new Date();
+                if(!records.includes(todayStr)) {
+                    checkDate.setDate(checkDate.getDate() - 1);
+                }
+                while(true) {
+                    let cStr = formatDateStr(checkDate);
+                    if(records.includes(cStr)) {
+                        continuous++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // 更新左侧面板数字
+            document.getElementById('totalDays').innerText = totalCheckins;
+            document.getElementById('wheatValue').innerText = totalWheat; // 总分
+            document.getElementById('continuousDays').innerText = continuous;
+            
+            // 动态更新明细
+            document.getElementById('dailyEarn').innerText = wheatFromCheckin > 0 ? `+${wheatFromCheckin}` : "+0";
+            document.getElementById('postEarn').innerText = wheatFromPost > 0 ? `+${wheatFromPost}` : "+0";
+
+            // 更新按钮状态
+            let btn = document.getElementById('checkinBtn');
+            if(records.includes(todayStr)) {
+                btn.innerText = "今天已签到";
+                btn.disabled = true;
+                btn.style.backgroundColor = "#ccc";
+                btn.style.color = "#666";
+            } else {
+                btn.innerText = "盖下今日印章";
+                btn.disabled = false;
+                btn.style.backgroundColor = "#2b4235";
+                btn.style.color = "#fff";
+            }
+        }
+
+        // === 核心逻辑 3：点击签到 ===
+        function doCheckin() {
+            if(currentUser === 'guest') {
+                alert("请先点击右上角登录后再签到哦！");
+                return;
+            }
+
+            let records = JSON.parse(localStorage.getItem(checkinKey) || '[]');
+            
+            // 需求1：每天只能签到1次
+            if(records.includes(todayStr)) {
+                alert("今天已经签过啦，明天再来吧！");
+                return;
+            }
+
+            // 添加今日记录
+            records.push(todayStr);
+            localStorage.setItem(checkinKey, JSON.stringify(records));
+
+            // 顺带调用你的后端全局打卡
+            fetch('http://127.0.0.1:5000/api/checkin/1', { method: 'POST' }).catch(e => console.log(e));
+
+            // 提示并刷新UI
+            alert("盖印成功！麦粒值 +5");
+            generateCalendar();
+            updateStatsAndUI();
+        }
+
+        // 辅助函数：把日期对象转成 YYYY-MM-DD 字符串
+        function formatDateStr(dateObj) {
+            let y = dateObj.getFullYear();
+            let m = String(dateObj.getMonth() + 1).padStart(2, '0');
+            let d = String(dateObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+    </script>
+        <script>
+        if(currentUser) {
+            let statusBtn = document.getElementById('userStatus');
+            if(statusBtn) {
+                statusBtn.innerText = currentUser;
+                statusBtn.href = "login.html"; 
+            }
+        }
+    </script>
+</body>
+</html>

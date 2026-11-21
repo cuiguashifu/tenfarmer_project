@@ -1,0 +1,122 @@
+/* =========================================
+   十个勤天 - 全局高级定制样式表 (style.css)
+   ========================================= */
+
+:root {
+    --bg-color: #f7f6f2; /* 米色背景 */
+    --primary-color: #2d4a3e; /* 深绿色 */
+    --primary-hover: #1e332a; /* 深绿色悬停 */
+    --card-bg: #ffffff;
+    --text-dark: #333333;
+    --text-light: #777777;
+}
+
+body {
+    background-color: var(--bg-color);
+    /* 设置优雅的系统字体 */
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--text-dark);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ================= 顶部导航栏 ================= */
+.navbar-custom {
+    background-color: rgba(247, 246, 242, 0.95); /* 微微透明的米色 */
+    backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
+    padding: 16px 0;
+    border-bottom: 1px solid #e0ded6;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-link-custom {
+    color: var(--text-dark);
+    margin: 0 12px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.nav-link-custom:hover {
+    background-color: #e5e9e5;
+    color: var(--primary-color);
+}
+
+/* 当前所在页面的导航高亮 */
+.nav-link-custom.active {
+    background-color: #e5e9e5;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.btn-login {
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    padding: 5px 20px;
+    background: transparent;
+    color: var(--text-dark);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+    background: #e5e9e5;
+    border-color: var(--primary-color);
+}
+
+/* ================= 通用卡片样式 ================= */
+.custom-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04); /* 柔和的阴影 */
+    overflow: hidden;
+    margin-bottom: 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.custom-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* ================= 按钮样式 ================= */
+.btn-primary-custom {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    background-color: var(--primary-hover);
+    color: white;
+    box-shadow: 0 4px 12px rgba(45, 74, 62, 0.2);
+}
+
+/* 默认大标题样式统一 */
+h1, h2, h3, h4, h5 {
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* 滚动条美化 (可选) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}

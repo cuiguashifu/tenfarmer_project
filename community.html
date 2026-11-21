@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>社区 - 十个勤天</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 统一导航栏 -->
+    <div class="navbar-custom text-center d-flex justify-content-between align-items-center px-5">
+        <div class="fs-5 fw-bold" style="color: var(--primary-color);">☀ 十个勤天手册</div>
+        <div>
+            <a href="index.html" class="nav-link-custom">首页</a>
+            <a href="members.html" class="nav-link-custom">成员</a>
+            <a href="activities.html" class="nav-link-custom">活动</a>
+            <a href="events.html" class="nav-link-custom">助农</a>
+            <a href="checkin.html" class="nav-link-custom">签到</a>
+            <a href="community.html" class="nav-link-custom active">社区</a>
+            <a href="gallery.html" class="nav-link-custom">名场面</a>
+        </div>
+        <a href="login.html" class="btn-login text-decoration-none" id="userStatus">登录</a>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row">
+            <!-- 左侧发帖区 -->
+            <div class="col-md-4">
+                <div class="custom-card p-4">
+                    <h4 class="mb-3" style="font-family: 'Noto Serif SC', serif; color: #2b4235;">今日记录</h4>
+                    <textarea id="postContent" class="form-control mb-3" rows="4" placeholder="有想法就去做，不要留遗憾。" style="border-radius: 8px;"></textarea>
+                    <button class="btn btn-primary-custom w-100" onclick="publishPost()">发布</button>
+                </div>
+            </div>
+            
+            <!-- 右侧帖子列表区 ，全部由 JS 动态渲染 -->
+            <div class="col-md-8" id="postList">
+                <!-- 数据加载中提示 -->
+                <div class="text-center text-muted p-4">正在加载全站动态...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = localStorage.getItem('loginUser');
+        
+        // 更新导航栏
+        let statusBtn = document.getElementById('userStatus');
+        if (currentUser && statusBtn) {
+            statusBtn.innerText = currentUser;
+        }
+
+        // ================= 1. 加载全站帖子 =================
+        function loadPosts() {
+            fetch('http://127.0.0.1:5000/api/get_posts')
+                .then(res => res.json())
+                .then(data => {
+                    let html = '';
+                    if(data.length === 0) {
+                        html = '<div class="text-center text-muted p-4">还没有人发布记录，快来抢占沙发吧！</div>';
+                    } else {
+                        data.forEach(post => {
+                            // 把数据库时间格式化一下
+                            let d = new Date(post.create_time);
+                            let timeStr = isNaN(d.getTime()) ? post.create_time : d.toLocaleString();
+                            
+                            // 随机头像颜色
+                            let colors = ['bg-secondary', 'bg-success', 'bg-primary', 'bg-warning', 'bg-danger'];
+                            let randomColor = colors[post.message_id % colors.length];
+                            let firstChar = post.nickname.charAt(0);
+
+                            html += `
+                                <div class="custom-card p-4 mb-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle ${randomColor} text-white d-flex justify-content-center align-items-center me-3" style="width: 45px; height: 45px; font-weight: bold;">
+                                            ${firstChar}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold">${post.nickname}</h6>
+                                            <small class="text-muted">${timeStr}</small>
+                                        </div>
+                                    </div>
+                                    <p class="mb-0" style="font-size: 15px; line-height: 1.6;">${post.content}</p>
+                                </div>
+                            `;
+                        });
+                    }
+                    document.getElementById('postList').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('postList').innerHTML = '<div class="text-center text-danger p-4">加载失败，请检查后端</div>';
+                });
+        }
+
+        // 页面一打开就加载数据
+        loadPosts();
+
+        // ================= 2. 发布新帖子 =================
+        function getTodayStr() {
+            let today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        }
+
+        function publishPost() {
+            if (!currentUser) {
+                alert("请先点击右上角登录，才能发布成长记录哦！");
+                return;
+            }
+
+            let content = document.getElementById('postContent').value;
+            if (!content.trim()) {
+                alert("请先写点什么吧！");
+                return;
+            }
+
+            // 1. 提交到后端数据库
+            fetch('http://127.0.0.1:5000/api/add_post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname: currentUser, content: content })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.code === 200) {
+                    // 2. 处理每日加分逻辑
+                    let todayStr = getTodayStr();
+                    let rewardKey = 'post_reward_' + currentUser + '_' + todayStr;
+                    
+                    if (localStorage.getItem(rewardKey)) {
+                        alert("发布成功！不过今天的麦粒值（+2）已经拿过啦。");
+                    } else {
+                        let scoreKey = 'post_score_' + currentUser;
+                        let currentScore = parseInt(localStorage.getItem(scoreKey) || '0');
+                        localStorage.setItem(scoreKey, currentScore + 2); 
+                        localStorage.setItem(rewardKey, 'true');
+                        alert("发布成功！写入数据库，麦粒值 +2");
+                    }
+
+                    // 3. 清空输入框，刷新列表
+                    document.getElementById('postContent').value = '';
+                    loadPosts(); 
+                } else {
+                    alert("发布失败：" + data.msg);
+                }
+            })
+            .catch(err => {
+                alert("网络错误，请检查后端是否运行");
+            });
+        }
+    </script>
+    <script>
+        if(currentUser) {
+            let statusBtn = document.getElementById('userStatus');
+            if(statusBtn) {
+                statusBtn.innerText = currentUser;
+                statusBtn.href = "login.html"; 
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>登录 / 注册 - 十个勤天</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #f7f6f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .auth-card {
+            width: 400px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 40px;
+        }
+        .nav-tabs .nav-link {
+            color: #666;
+            border: none;
+            font-weight: bold;
+        }
+        .nav-tabs .nav-link.active {
+            color: #2b4235;
+            border-bottom: 2px solid #2b4235;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-card">
+        <h3 class="text-center mb-4" style="color: #2b4235; font-weight: bold;">☀ 十个勤天</h3>
+        
+        <!-- 切换选项卡 -->
+        <ul class="nav nav-tabs justify-content-center mb-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button">登录</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button">注册</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- 登录表单 -->
+            <div class="tab-pane fade show active" id="login" role="tabpanel">
+                <div class="mb-3">
+                    <input type="text" id="loginUser" class="form-control" placeholder="请输入名字">
+                </div>
+                <div class="mb-3">
+                    <input type="password" id="loginPass" class="form-control" placeholder="请输入密码">
+                </div>
+                <button class="btn btn-primary-custom w-100" onclick="doLogin()">登 录</button>
+            </div>
+
+            <!-- 注册表单 -->
+            <div class="tab-pane fade" id="register" role="tabpanel">
+                <div class="mb-3">
+                    <input type="text" id="regUser" class="form-control" placeholder="给自己起个名字">
+                </div>
+                <div class="mb-3">
+                    <input type="password" id="regPass" class="form-control" placeholder="设置密码">
+                </div>
+                <button class="btn btn-primary-custom w-100" onclick="doRegister()">注 册</button>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="index.html" class="text-muted text-decoration-none" style="font-size: 14px;">← 返回首页</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 注册逻辑
+        function doRegister() {
+            let user = document.getElementById('regUser').value;
+            let pass = document.getElementById('regPass').value;
+            
+            if(!user || !pass) { alert("请填写完整！"); return; }
+
+            fetch('http://127.0.0.1:5000/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.code === 200) {
+                    alert(data.msg);
+                    // 注册成功后自动跳到登录选项卡
+                    document.getElementById('login-tab').click();
+                } else {
+                    alert(data.msg);
+                }
+            });
+        }
+
+        // 登录逻辑
+        function doLogin() {
+            let user = document.getElementById('loginUser').value;
+            let pass = document.getElementById('loginPass').value;
+            
+            if(!user || !pass) { alert("请填写完整！"); return; }
+
+            fetch('http://127.0.0.1:5000/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.code === 200) {
+                    // 登录成功，把用户名存到浏览器本地
+                    localStorage.setItem('loginUser', data.username);
+                    alert("欢迎回来，" + data.username + "！");
+                    window.location.href = "index.html"; // 跳回首页
+                } else {
+                    alert(data.msg);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
